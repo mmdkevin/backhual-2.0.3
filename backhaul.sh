@@ -1,15 +1,20 @@
+#!/usr/bin/env bash
+# ============================================================
+#  Backhaul Premium installer -- CRACKED BUILD
+#  Cracked by Ben - Telegram : https://t.me/CrckedbyBen
+# ============================================================
 
 service_dir="/etc/systemd/system"
 config_dir="/root/backhaul-core"
 CERT_DIR="/root/backhaul-core/cert_files"
 CERT_FILE="$CERT_DIR/cert.crt"
 KEY_FILE="$CERT_DIR/cert.key"
-mkdir -p "$CERT_DIR"
 if [[ $EUID -ne 0 ]]; then
 echo "This script must be run as root"
 sleep 1
 exit 1
 fi
+mkdir -p "$CERT_DIR" || exit 1
 colorize() {
 local color="$1"
 local text="$2"
@@ -88,16 +93,19 @@ fi
 return 0
 }
 install_jq() {
-if ! command -v jq &> /dev/null; then
-if command -v apt-get &> /dev/null; then
-colorize yellow "Installing jq..."
-sudo apt-get update && sudo apt-get install -y jq
-else
-colorize red "Error: Unsupported package manager. Please install jq manually."
-press_key
-exit 1
-fi
-fi
+    local missing=()
+    command -v jq >/dev/null 2>&1 || missing+=(jq)
+    command -v curl >/dev/null 2>&1 || missing+=(curl)
+    command -v sha256sum >/dev/null 2>&1 || missing+=(coreutils)
+    if (( ${#missing[@]} > 0 )); then
+        if command -v apt-get >/dev/null 2>&1; then
+            colorize yellow "Installing dependencies: ${missing[*]}"
+            apt-get update && apt-get install -y "${missing[@]}" ca-certificates || return 1
+        else
+            colorize red "Install these dependencies manually: ${missing[*]}"
+            return 1
+        fi
+    fi
 }
 download_and_extract_backhaul() {
     local core_url="https://raw.githubusercontent.com/mmdkevin/backhual-2.0.3/main/backhaul_premium"
@@ -106,64 +114,36 @@ download_and_extract_backhaul() {
     local tmp
 
     if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
-        colorize red "This core requires Linux x86_64."
+        colorize red "This core requires Linux x86_64 (amd64)."
         return 1
     fi
-
     if [[ -f "$target" ]]; then
         chmod u+x "$target" || return 1
         colorize green "Existing core found - keeping it."
         return 0
     fi
-
-    if ! command -v curl >/dev/null 2>&1; then
-        colorize red "Install curl first: apt-get update && apt-get install -y curl"
-        return 1
-    fi
-
     mkdir -p "$config_dir" || return 1
     tmp="$(mktemp "${config_dir}/.backhaul-download.XXXXXX")" || return 1
-
     colorize yellow "Downloading Backhaul core..."
-
-    if ! curl --fail --location --show-error \
-        --retry 3 --connect-timeout 20 --max-time 300 \
-        "$core_url" -o "$tmp"; then
+    if ! curl --fail --location --show-error --retry 3 \
+        --connect-timeout 20 --max-time 300 "$core_url" -o "$tmp"; then
         rm -f "$tmp"
-        colorize red "Core download failed."
+        colorize red "Core download failed. Check the repository URL and connection."
         return 1
     fi
-
-    if ! printf '%s  %s\n' "$expected_sha" "$tmp" \
-        | sha256sum --check --status; then
+    if ! printf '%s  %s\n' "$expected_sha" "$tmp" | sha256sum --check --status; then
         rm -f "$tmp"
         colorize red "Core checksum verification failed."
         return 1
     fi
-
     if ! chmod 755 "$tmp" || ! mv -f "$tmp" "$target"; then
         rm -f "$tmp"
         colorize red "Core installation failed."
         return 1
     fi
-
     colorize green "Backhaul core installed successfully."
 }
-local src_core=""
-for c in "${candidates[@]}"; do
-if [[ -n "$c" && -f "$c" ]]; then src_core="$c"; break; fi
-done
-if [[ -z "$src_core" ]]; then
-colorize red "Cracked core not found." bold
-colorize yellow "Put 'backhaul-premium-v2-cracked' next to this script (or in ${config_dir}) and re-run."
-press_key
-return 1
-fi
-cp -f "$src_core" "${config_dir}/backhaul_premium"
-chmod u+x "${config_dir}/backhaul_premium"
-colorize green "Cracked core installed [Cracked by Ben]." bold
-}
-install_jq
+install_jq || exit 1
 download_and_extract_backhaul || exit 1
 declare -A CONFIG
 reset_config() {
