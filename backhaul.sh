@@ -103,7 +103,7 @@ exit 1
 fi
 fi
 }
-download_and_extract_backhaul() download_and_extract_backhaul() {
+download_and_extract_backhaul() {
     local core_url="https://raw.githubusercontent.com/mmdkevin/backhual-2.0.3/main/backhaul_premium"
     local expected_sha="6931b4cefad948af639ad97984356ce04d4e61c4d2efdd9877eea455ef6514b1"
     local target="${config_dir}/backhaul_premium"
