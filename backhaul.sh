@@ -1,7 +1,3 @@
-# ============================================================
-#  Backhaul Premium installer -- CRACKED BUILD
-#  Cracked by Ben - Telegram : https://t.me/CrckedbyBen
-# ============================================================
 
 service_dir="/etc/systemd/system"
 config_dir="/root/backhaul-core"
